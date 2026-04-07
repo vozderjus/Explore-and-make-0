@@ -1,19 +1,18 @@
 from django.db import models
 from django.conf import settings
 
-PRIORITY_CHOICES = (
-    ("LOW", "Низкий"),
-    ("MEDIUM", "Средний"),
-    ("HIGH", "Высокий"),
-    ("CRITICAL", "Критичный"),
-)
+class TaskStatus(models.TextChoices):
+    NEW = 'new', 'Новая'
+    IN_PROGRESS = 'in_progress', 'В работе'
+    IN_REVIEW = 'in_review', 'На проверке'
+    DONE = 'done', 'Выполнена'
 
-STATUS_CHOICES = (
-    ("NEW", "Новая"),
-    ("IN_PROGRESS", "В работе"),
-    ("IN_REVIEW", "На проверке"),
-    ("DONE", "Выполнена"),
-)
+
+class TaskPriority(models.TextChoices):
+    LOW = 'low', 'Низкий'
+    MEDIUM = 'medium', 'Средний'
+    HIGH = 'high', 'Высокий'
+    CRITICAL = 'critical', 'Критический'
 
 class Project(models.Model):
     name = models.CharField(max_length=64)
@@ -40,13 +39,12 @@ class Task(models.Model):
 
     title = models.CharField(max_length=64),
     description = models.TextField()
-    priority = models.CharField(choices=PRIORITY_CHOICES.choices, default=PRIORITY_CHOICES.MEDIUM)
-    status = models.CharField(choices=STATUS_CHOICES.choices, default=STATUS_CHOICES.NEW)
+    priority = models.CharField(choices=TaskPriority.choices, default=TaskPriority.MEDIUM)
+    status = models.CharField(choices=TaskStatus.choices, default=TaskStatus.NEW)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     performers = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
         related_name="related_tasks",
     )
