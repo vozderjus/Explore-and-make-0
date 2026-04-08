@@ -37,14 +37,23 @@ class Task(models.Model):
         related_name="tasks",
     )
 
-    title = models.CharField(max_length=64),
-    description = models.TextField()
-    priority = models.CharField(choices=TaskPriority.choices, default=TaskPriority.MEDIUM)
-    status = models.CharField(choices=TaskStatus.choices, default=TaskStatus.NEW)
+    title = models.CharField(max_length=64)
+    description = models.TextField(blank=True)
+    priority = models.CharField(max_length=20, choices=TaskPriority.choices, default=TaskPriority.MEDIUM)
+    status = models.CharField(max_length=20, choices=TaskStatus.choices, default=TaskStatus.NEW)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    deadline = models.DateTimeField(null=True, blank=True)
 
-    performers = models.ManyToManyField(
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="created_tasks",
+    )
+    
+    performer = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         related_name="related_tasks",
+        null=True,
+        blank=True,
     )
