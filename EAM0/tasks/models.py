@@ -53,7 +53,7 @@ class Project(models.Model):
         ]
     
     def is_member(self, user):
-        return self.project_memberships.filter(user=user).exists()
+        return self.participants.filter(pk=user.pk).exists()
 
 
 class Task(models.Model):
