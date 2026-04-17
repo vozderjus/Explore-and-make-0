@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Project, Task, TaskStatus, TaskPriority
+from .models import Project, Task
 
 class ProjectSerializer(serializers.ModelSerializer):
     

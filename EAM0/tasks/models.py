@@ -1,10 +1,37 @@
 from django.db import models
 from django.conf import settings
+from django.contrib.auth.models import AbstractUser
 
+class TaskPriority(models.IntegerChoices):
+    LOW = 1, 'Низкий'
+    MEDIUM = 2, 'Средний'
+    HIGH = 3, 'Высокий'
+    CRITICAL = 4, 'Критический'
+
+
+class TaskStatus(models.TextChoices):
+    NEW = 'new', 'Новая'
+    IN_PROGRESS = 'in_progress', 'В работе'
+    IN_REVIEW = 'in_review', 'На проверке'
+    DONE = 'done', 'Выполнена'
+    CANCELLED = 'cancelled', 'Отменена'
+
+class User(AbstractUser):
+    email = models.EmailField(unique=True)
+    phone = models.CharField(max_length=15, blank=True)
+    position = models.CharField(max_length=100, blank=True)
+    
+    class Meta:
+        db_table = 'users'
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
+        ordering = ['email']
 
 class Project(models.Model):
     name = models.CharField(max_length=64)
     description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -20,27 +47,16 @@ class Project(models.Model):
     class Meta:
         verbose_name = 'Проект'
         verbose_name_plural = 'Проекты'
-        ordering = ['-owner_username', 'name']
+        ordering = ['-updated_at', 'name']
         indexes = [
-            models.Index(fields=['owner', '-name'])
+            models.Index(fields=['owner', '-created_at'])
         ]
+    
+    def is_member(self, user):
+        return self.project_memberships.filter(user=user).exists()
+
 
 class Task(models.Model):
-
-    class TaskStatus(models.TextChoices):
-        NEW = 'new', 'Новая'
-        IN_PROGRESS = 'in_progress', 'В работе'
-        IN_REVIEW = 'in_review', 'На проверке'
-        DONE = 'done', 'Выполнена'
-
-
-    class TaskPriority(models.TextChoices):
-        LOW = 1, 'Низкий'
-        MEDIUM = 2, 'Средний'
-        HIGH = 3, 'Высокий'
-        CRITICAL = 4, 'Критический'
-
-
     title = models.CharField(max_length=255, db_index=True)
     description = models.TextField(blank=True)
 
@@ -53,7 +69,7 @@ class Task(models.Model):
     status = models.CharField(
         max_length=20,
         choices=TaskStatus.choices,
-        default=TaskStatus.TODO,
+        default=TaskStatus.NEW,
         db_index=True
         )
 
