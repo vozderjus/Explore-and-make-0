@@ -1,82 +1,80 @@
-from django.shortcuts import render, get_object_or_404
-
-from rest_framework import viewsets, status
+from django.db.models import Q
+from django.contrib.auth import get_user_model
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
-from .models import Project, Task
-from .serializers import ProjectSerializer, TaskSerializer
+from .models import Task, Project
+from .serializers import TaskSerializer, ProjectShortSerializer, UserShortSerializer
+from .permissions import TaskPermission
 
+User = get_user_model()
+
+
+@extend_schema(
+    summary="Управление задачами проекта",
+    description="CRUD-операции над задачами с матрицей ролевого доступа.",
+    tags=["Tasks"],
+)
 class TaskViewSet(viewsets.ModelViewSet):
-    queryset = Task.objects.all()
     serializer_class = TaskSerializer
-
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
-        serializer.save(performer=self.request.user)
-
-    def create(self, request):
-        project_id = request.data.get('project')
-        project = get_object_or_404(Project, id=project_id)
-
-        if not project_id:
-            return Response(
-                {"detail": "Поле 'project' обязательно!"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if request.user not in project.participants.all():
-            return Response(
-                {"detail": "У вас нет доступа к этому проекту"},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        return super().create(request)
-
-    def update(self, request):
-        task = self.get_object()
-        
-        if task.project.owner != request.user:
-            return Response(
-                {"detail": "Только владелец проекта может редактировать задачи"},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        return super().update(request)
+    permission_classes = [IsAuthenticated, TaskPermission]
+    filter_backends = [DjangoFilterBackend]
     
-    def destroy(self, request):
-        task = self.get_object()
-        
-        if task.project.owner != request.user:
-            return Response(
-                {"detail": "Только владелец проекта может удалить задачу"},
-                status=stauts.HTTP_403_FORBIDDEN
-            )
+    filterset_fields = {
+        "project": ["exact"],
+        "status": ["exact"],
+        "priority": ["exact"],
+        "performer": ["exact", "isnull"],
+        "deadline": ["exact", "gte", "lte"],
+    }
+
+    def get_queryset(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Task.objects.none()
+
+        return Task.objects.filter(
+            Q(project__participants=user) | Q(project__owner=user)
+        ).distinct().select_related(
+            "project", "author", "performer"
+        ).prefetch_related(
+            "project__participants"
+        )
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["request"] = self.request
+        return context
+
+
+@extend_schema(
+    summary="Список проектов",
+    description="Возвращает проекты, участником которых является текущий пользователь.",
+    tags=["Projects"],
+)
+class ProjectListViewSet(viewsets.ReadOnlyModelViewSet):
+    """Только для чтения: список проектов текущего пользователя"""
+    serializer_class = ProjectShortSerializer
+    permission_classes = [IsAuthenticated]
     
-    def partial_update(self, request):
-        task = self.get_object()
-        user = request.user
+    def get_queryset(self):
+        user = self.request.user
+        return Project.objects.filter(
+            Q(participants=user) | Q(owner=user)
+        ).distinct().order_by('name')
 
-        requested_fields = set(request.data.keys())
-        ignored_fields = {'id', 'created_at', 'updated_at', 'project', 'author'}
-        fields_to_check = requested_fields - ignored_fields
 
-        if task.project.owner == user:
-            allowed_fields = {'title', 'description', 'status', 'priority', 'deadline', 'performer'}
-        elif task.performer == user:
-            allowed_fields = {'status', 'priority'}
-        elif task.author == user:
-            allowed_fields = {'description'}
-        else:
-            return Response(
-                {"detail": "Недостаточно прав для редактирования этой задачи"},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        forbidden_fields = fields_to_check - allowed_fields
-        if forbidden_fields:
-            return Response(
-                {"detail": f"Нельзя изменять поля: {', '.join(forbidden_fields)}"},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        return super().partial_update(request)
+@extend_schema(
+    summary="Список пользователей",
+    description="Возвращает список всех пользователей (для выбора исполнителя).",
+    tags=["Users"],
+)
+class UserListViewSet(viewsets.ReadOnlyModelViewSet):
+    """Только для чтения: список всех пользователей"""
+    serializer_class = UserShortSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = User.objects.all().order_by('first_name', 'last_name')

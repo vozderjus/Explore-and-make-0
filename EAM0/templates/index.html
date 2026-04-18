@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alpha-Soft Task Tracker - Kanban</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div id="notification" class="notification" style="display:none;"></div>
+
+    <!-- Страница входа -->
+    <section id="loginSection" class="login-page">
+        <div class="login-container">
+            <h1>📋 Alpha-Soft Task Tracker</h1>
+            <p class="subtitle">Внутренний таск-трекер</p>
+            
+            <form id="loginForm" class="login-form">
+                <h2>Вход в систему</h2>
+                <div class="form-group">
+                    <input type="text" id="username" placeholder="Логин" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <input type="password" id="password" placeholder="Пароль" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Войти</button>
+            </form>
+
+            <!-- Тестовые учетные записи -->
+            <div class="demo-accounts">
+                <h3>🔑 Тестовые учетные записи</h3>
+                <table class="accounts-table">
+                    <thead>
+                        <tr>
+                            <th>Логин</th>
+                            <th>Пароль</th>
+                            <th>Роль</th>
+                            <th>Права</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>olga</code></td>
+                            <td><code>olga123</code></td>
+                            <td>Project Manager</td>
+                            <td>Создание проектов и задач</td>
+                        </tr>
+                        <tr>
+                            <td><code>ivan</code></td>
+                            <td><code>ivan123</code></td>
+                            <td>Tech Lead</td>
+                            <td>Owner задач, полный доступ</td>
+                        </tr>
+                        <tr>
+                            <td><code>maria</code></td>
+                            <td><code>maria123</code></td>
+                            <td>Senior Developer</td>
+                            <td>Author/Performer</td>
+                        </tr>
+                        <tr>
+                            <td><code>alexey</code></td>
+                            <td><code>alexey123</code></td>
+                            <td>Junior Developer</td>
+                            <td>Performer (статус/приоритет)</td>
+                        </tr>
+                        <tr>
+                            <td><code>admin</code></td>
+                            <td><code>admin123</code></td>
+                            <td>Admin</td>
+                            <td>Полный доступ</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Kanban доска -->
+    <main id="mainContent" class="kanban-page" style="display:none;">
+        <header class="kanban-header">
+            <div class="header-left">
+                <h1>📋 Kanban Board</h1>
+                <span id="userInfo" class="user-badge"></span>
+            </div>
+            <div class="header-right">
+                <button id="refreshBtn" class="btn btn-secondary">🔄 Обновить</button>
+                <button id="createTaskBtn" class="btn btn-primary">➕ Новая задача</button>
+                <button id="logoutBtn" class="btn btn-danger">🚪 Выйти</button>
+            </div>
+        </header>
+
+        <!-- Фильтры -->
+        <section class="filters-bar">
+            <div class="filters-group">
+                <label>Проект:</label>
+                <select id="filterProject">
+                    <option value="">Все проекты</option>
+                </select>
+                
+                <label>Исполнитель:</label>
+                <select id="filterPerformer">
+                    <option value="">Все</option>
+                    <option value="null">Не назначен</option>
+                </select>
+                
+                <label>Приоритет:</label>
+                <select id="filterPriority">
+                    <option value="">Все</option>
+                    <option value="4">🔴 Критический</option>
+                    <option value="3">🟠 Высокий</option>
+                    <option value="2">🟡 Средний</option>
+                    <option value="1">🟢 Низкий</option>
+                </select>
+                
+                <label>Дедлайн:</label>
+                <input type="date" id="filterDeadline">
+                
+                <button id="applyFilters" class="btn btn-secondary">Применить</button>
+                <button id="resetFilters" class="btn btn-secondary">Сброс</button>
+            </div>
+        </section>
+
+        <!-- Kanban доска -->
+        <div class="kanban-board">
+            <div class="kanban-column" data-status="new">
+                <div class="column-header status-new">
+                    <h3>📝 Новые</h3>
+                    <span class="task-count">0</span>
+                </div>
+                <div class="column-body" id="column-new"></div>
+            </div>
+
+            <div class="kanban-column" data-status="in_progress">
+                <div class="column-header status-in_progress">
+                    <h3>⚡ В работе</h3>
+                    <span class="task-count">0</span>
+                </div>
+                <div class="column-body" id="column-in_progress"></div>
+            </div>
+
+            <div class="kanban-column" data-status="in_review">
+                <div class="column-header status-in_review">
+                    <h3>👀 На проверке</h3>
+                    <span class="task-count">0</span>
+                </div>
+                <div class="column-body" id="column-in_review"></div>
+            </div>
+
+            <div class="kanban-column" data-status="done">
+                <div class="column-header status-done">
+                    <h3>✅ Выполнены</h3>
+                    <span class="task-count">0</span>
+                </div>
+                <div class="column-body" id="column-done"></div>
+            </div>
+
+            <div class="kanban-column" data-status="cancelled">
+                <div class="column-header status-cancelled">
+                    <h3>❌ Отменены</h3>
+                    <span class="task-count">0</span>
+                </div>
+                <div class="column-body" id="column-cancelled"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Модальное окно создания задачи -->
+    <div id="createTaskModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>➕ Новая задача</h2>
+                <button class="close-modal" onclick="closeCreateModal()">&times;</button>
+            </div>
+            <form id="createTaskForm" class="task-form">
+                <div class="form-group">
+                    <label>Название *</label>
+                    <input type="text" id="taskTitle" required placeholder="Краткое описание задачи">
+                </div>
+                
+                <div class="form-group">
+                    <label>Описание</label>
+                    <textarea id="taskDesc" rows="3" placeholder="Подробное описание..."></textarea>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Проект *</label>
+                        <select id="taskProject" required>
+                            <option value="">Загрузка...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Приоритет</label>
+                        <select id="taskPriority">
+                            <option value="1">🟢 Низкий</option>
+                            <option value="2" selected>🟡 Средний</option>
+                            <option value="3">🟠 Высокий</option>
+                            <option value="4">🔴 Критический</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Дедлайн</label>
+                        <input type="datetime-local" id="taskDeadline">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Исполнитель</label>
+                        <select id="taskPerformer">
+                            <option value="">Не назначен</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateModal()">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Создать задачу</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно редактирования -->
+    <div id="editTaskModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>✏️ Редактирование задачи</h2>
+                <button class="close-modal" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form id="editTaskForm">
+                <input type="hidden" id="editTaskId">
+                
+                <div class="form-group">
+                    <label>Название</label>
+                    <input type="text" id="editTitle" readonly>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group" id="editDescriptionGroup">
+                        <label>Описание</label>
+                        <textarea id="editDescription" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-group" id="editStatusPriorityGroup">
+                        <label>Статус</label>
+                        <select id="editStatus">
+                            <option value="new">📝 Новая</option>
+                            <option value="in_progress">⚡ В работе</option>
+                            <option value="in_review">👀 На проверке</option>
+                            <option value="done">✅ Выполнена</option>
+                            <option value="cancelled">❌ Отменена</option>
+                        </select>
+                        
+                        <label>Приоритет</label>
+                        <select id="editPriority">
+                            <option value="1">🟢 Низкий</option>
+                            <option value="2">🟡 Средний</option>
+                            <option value="3">🟠 Высокий</option>
+                            <option value="4">🔴 Критический</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Отмена</button>
+                    <button type="button" class="btn btn-danger" id="deleteTaskBtn">🗑 Удалить</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>

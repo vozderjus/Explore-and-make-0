@@ -47,6 +47,11 @@ INSTALLED_APPS = [
 
 AUTH_USER_MODEL = 'tasks.User'
 
+STATIC_URL = 'static/'
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',  # ← Папка со статикой в корне проекта
+]
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -62,7 +67,7 @@ ROOT_URLCONF = 'EAM0.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -114,9 +119,21 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Task Tracker API',
-    'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAuthenticated'],
-    'SECURITY': [{'bearerAuth': []}],
+    "TITLE": "Альфа-Софт Task Tracker API",
+    "DESCRIPTION": "REST API для внутреннего таск-трекера. Ролевой доступ, JWT-аутентификация, фильтрация задач.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,  # Не отдавать raw YAML по умолчанию, только через /api/schema/
+    "COMPONENT_SPLIT_REQUEST": True, # Разделять схемы запросов/ответов в Swagger
+    "SECURITY": [{"bearerAuth": []}],
+    "COMPONENTS": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            }
+        }
+    },
 }
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
