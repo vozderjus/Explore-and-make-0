@@ -59,19 +59,16 @@ class TaskSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at', 'author']
 
     def create(self, validated_data):
-        # Автор подставляется автоматически
         validated_data['author'] = self.context['request'].user
         return super().create(validated_data)
 
     def validate(self, attrs):
-        # Валидация дедлайна
         deadline = attrs.get('deadline')
         if deadline and deadline < timezone.now():
             raise serializers.ValidationError({
                 'deadline': 'Дедлайн не может быть в прошлом.'
             })
 
-        # Валидация исполнителя
         project = attrs.get('project') or getattr(self.instance, 'project', None)
         performer = attrs.get('performer') or getattr(self.instance, 'performer', None)
 
