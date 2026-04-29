@@ -3,8 +3,7 @@ from django.utils import timezone
 from .models import Task, Project, User
 
 
-class UserShortSerializer(serializers.ModelSerializer):
-    """Краткая информация о пользователе"""
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'first_name', 'last_name', 'email']
@@ -16,8 +15,7 @@ class UserShortSerializer(serializers.ModelSerializer):
         return data
 
 
-class ProjectShortSerializer(serializers.ModelSerializer):
-    """Краткая информация о проекте"""
+class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = ['id', 'name']
