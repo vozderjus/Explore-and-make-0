@@ -8,7 +8,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
 from .models import Task, Project
-from .serializers import TaskSerializer, ProjectShortSerializer, UserShortSerializer
+from .serializers import TaskSerializer, ProjectSerializer, UserSerializer
 from .permissions import TaskPermission
 
 User = get_user_model()
@@ -57,8 +57,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     tags=["Projects"],
 )
 class ProjectListViewSet(viewsets.ReadOnlyModelViewSet):
-    """Только для чтения: список проектов текущего пользователя"""
-    serializer_class = ProjectShortSerializer
+    serializer_class = ProjectSerializer
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
@@ -74,7 +73,6 @@ class ProjectListViewSet(viewsets.ReadOnlyModelViewSet):
     tags=["Users"],
 )
 class UserListViewSet(viewsets.ReadOnlyModelViewSet):
-    """Только для чтения: список всех пользователей"""
-    serializer_class = UserShortSerializer
+    serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
     queryset = User.objects.all().order_by('first_name', 'last_name')
