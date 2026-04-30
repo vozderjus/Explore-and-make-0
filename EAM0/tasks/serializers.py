@@ -22,9 +22,9 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 
 class TaskSerializer(serializers.ModelSerializer):
-    author = UserShortSerializer(read_only=True)
-    performer = UserShortSerializer(read_only=True)
-    project = ProjectShortSerializer(read_only=True)
+    author = UserSerializer(read_only=True)
+    performer = UserSerializer(read_only=True)
+    project = ProjectSerializer(read_only=True)
     
     author_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.none(),
